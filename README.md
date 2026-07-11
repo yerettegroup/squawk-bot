@@ -114,3 +114,11 @@ systemctl enable --now squawk
 systemctl status squawk
 journalctl -u squawk -f
 ```
+
+## License
+
+Squawk is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). Commercial use without copyleft restrictions requires a separate commercial license.
+
+Contact: [hello@yerettegroup.com](mailto:hello@yerettegroup.com)
+
+![yerette](mage.svg)

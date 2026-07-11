@@ -31,13 +31,13 @@ The Bot fetches RSS feeds from Yahoo Finance (`feeds.finance.yahoo.com`) and che
 
 ## Data retention and deletion
 
-If the Bot is removed from your server, its stored data for that server is retained on the host until manually purged. To request deletion of your server's data from the hosted instance, contact the operator (see below) with your server ID.
+If the Bot is removed from your server, its stored data for that server is retained on the host until manually purged. To request deletion of your server's data from the hosted instance, email hello@yerettegroup.com with your server ID.
 
 For self-hosted deployments, the operator of that instance is the data controller and this policy does not apply to them - review the operator's own policies.
 
 ## Contact
 
-For questions about this policy or data-deletion requests on the hosted instance, open an issue at [github.com/yerettegroup/squawk-bot/issues](https://github.com/yerettegroup/squawk-bot/issues).
+For privacy, data-deletion, legal, or other policy questions, email **hello@yerettegroup.com**. For bot bugs, feature requests, or anything code-related, open an issue at [github.com/yerettegroup/squawk-bot/issues](https://github.com/yerettegroup/squawk-bot/issues).
 
 ## Changes
 

@@ -38,4 +38,4 @@ These terms may be updated. Material changes will be reflected in the "Last upda
 
 ## Contact
 
-Open an issue at [github.com/yerettegroup/squawk-bot/issues](https://github.com/yerettegroup/squawk-bot/issues).
+For legal, terms, or other policy questions, email **hello@yerettegroup.com**. For bot bugs, feature requests, or anything code-related, open an issue at [github.com/yerettegroup/squawk-bot/issues](https://github.com/yerettegroup/squawk-bot/issues).

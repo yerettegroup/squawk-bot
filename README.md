@@ -25,7 +25,10 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `.env` and set `DISCORD_TOKEN` to your bot's token. Optionally set `ALERT_USER_ID` to your Discord user ID to receive a DM when a feed enters failure backoff.
+Edit `.env` and set `DISCORD_TOKEN` to your bot's token. Optional:
+
+- `ALERT_USER_ID` - your Discord user ID, DMed when a feed enters failure backoff.
+- `MAX_TICKERS_PER_CALL` - cap on tickers per `/watchlist ticker add` (leave blank for no cap).
 
 ### Running
 
@@ -52,7 +55,7 @@ Then add tickers with `/watchlist ticker action:add ticker:AAPL,MSFT,...`.
 
 | Command | Description | Cooldown |
 |---|---|---|
-| `/watchlist ticker action:<add\|remove> ticker:TICKER` | *admin* - Add/remove tickers (comma-separated, max 25). | 60s |
+| `/watchlist ticker action:<add\|remove> ticker:TICKER` | *admin* - Add/remove tickers (comma-separated). | 60s |
 | `/watchlist channel action:<set\|clear>` | *admin* - Set the channel ticker news posts to. | 15s |
 | `/watchlist show` | List tracked tickers. | 60s |
 | `/ticker recent ticker:TICKER` | Fetch the 3 most recent articles for any ticker. | 30s |

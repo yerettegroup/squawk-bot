@@ -30,7 +30,8 @@ PERMISSIONS_PATH = BASE_DIR / "permissions.json"
 BLACKLIST_PATH = BASE_DIR / "blacklist.json"
 VERSION_PATH = BASE_DIR / "VERSION"
 
-MAX_TICKERS_PER_CALL = 25
+_max_tickers_raw = os.getenv("MAX_TICKERS_PER_CALL")
+MAX_TICKERS_PER_CALL = int(_max_tickers_raw) if _max_tickers_raw else 0
 
 RSS_URL_TEMPLATE = "https://feeds.finance.yahoo.com/rss/2.0/headline?s={ticker}&region=US&lang=en-US"
 QUOTE_CHECK_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
@@ -562,7 +563,7 @@ async def watchlist_ticker(interaction: discord.Interaction, action: app_command
     if not requested:
         await interaction.response.send_message("Please provide at least one ticker symbol.", ephemeral=True)
         return
-    if len(requested) > MAX_TICKERS_PER_CALL:
+    if MAX_TICKERS_PER_CALL and len(requested) > MAX_TICKERS_PER_CALL:
         await interaction.response.send_message(
             f"Too many tickers at once - max {MAX_TICKERS_PER_CALL} per command.", ephemeral=True
         )

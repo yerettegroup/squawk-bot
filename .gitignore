@@ -1,0 +1,18 @@
+.env
+__pycache__/
+*.pyc
+venv/
+
+# Per-guild runtime state - contains live server/channel IDs and watchlists.
+# Created automatically on first write; nothing to seed here for a fresh clone.
+watchlist.json
+seen.json
+config.json
+news_config.json
+permissions.json
+blacklist.json
+
+# Internal / AI-assistant notes, not for publishing.
+CHANGELOG.md
+CLAUDE.md
+.claude/

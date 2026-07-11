@@ -18,22 +18,22 @@ A Discord bot that polls Yahoo Finance RSS feeds for a per-server stock ticker w
 
 ## Commands
 
-All commands require **Manage Server** or the server's configured allowed role. Manage Server users bypass cooldowns and channel restrictions entirely.
+**Manage Server** members can always use every command from any channel, cooldown-free.
+
+A delegated role (set via `/config role`) can also use the commands below, subject to any channel whitelist configured via `/config channel`. The `/config` commands themselves always require real Manage Server — the delegated role can't touch them.
 
 | Command | Description | Cooldown |
 |---|---|---|
-| `/watchlist ticker action:<add\|remove> ticker:TICKER` | Add/remove tickers (comma-separated, max 25). | 60s |
-| `/watchlist channel action:<set\|clear>` | Set the channel ticker news posts to. | 15s |
-| `/watchlist show` | List tracked tickers. | 60s |
-| `/ticker recent ticker:TICKER` | 3 most recent articles for any ticker. | 30s |
-| `/market channel action:<set\|clear>` | Set the channel market news posts to. | 15s |
-| `/market recent` | 3 most recent market news articles. | 30s |
-| `/config role action:<set\|clear> role:@role` | Delegate command access to a role. | 15s |
-| `/config channel action:<add\|remove\|show\|clear>` | Restrict which channels commands can be used in. | 15s |
-| `/config blacklist action:<add\|remove\|show\|clear> pattern:text` | Block articles from URLs containing a substring (e.g. `trefis`). | 15s |
-| `/squawk` | Show bot status, uptime, config, and last poll time. | 5s |
-
-`/config` commands always require real Manage Server permission — the delegated role cannot use them.
+| `/watchlist ticker action:<add\|remove> ticker:TICKER` | Add/remove tickers from this server's watchlist (comma-separated, max 25). | 60s |
+| `/watchlist channel action:<set\|clear>` | Set the channel where ticker news is posted. | 15s |
+| `/watchlist show` | List tickers currently tracked in this server. | 60s |
+| `/ticker recent ticker:TICKER` | Fetch the 3 most recent articles for any ticker on demand. | 30s |
+| `/market channel action:<set\|clear>` | Set the channel where market news is posted. | 15s |
+| `/market recent` | Fetch the 3 most recent market news articles on demand. | 30s |
+| `/config role action:<set\|clear> role:@role` | Grant a role access to Squawk commands (in addition to Manage Server). | 15s |
+| `/config channel action:<add\|remove\|show\|clear>` | Whitelist channels where the delegated role can use commands. If no whitelist is set, they can use commands anywhere. | 15s |
+| `/config blacklist action:<add\|remove\|show\|clear> pattern:text` | Block articles from URLs containing a given substring (e.g. `trefis`). | 15s |
+| `/squawk` | Show bot status, uptime, channel config, and last poll time. | 5s |
 
 ## How it works
 

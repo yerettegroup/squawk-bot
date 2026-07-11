@@ -713,13 +713,13 @@ async def watchlist_group_error(interaction: discord.Interaction, error: app_com
 
 config_group = app_commands.Group(
     name="config",
-    description="Server-wide Squawk configuration (permissions, allowed command channels)",
+    description="Server-wide Squawk configuration (permissions, channel restrictions, blacklist)",
     guild_only=True,
 )
 
 
-@config_group.command(name="role", description="Set or clear the role allowed to use Squawk's restricted commands")
-@app_commands.describe(action="Set or clear the allowed role", role="Role to authorize (required for set)")
+@config_group.command(name="role", description="Set or clear a role that can use Squawk commands (in addition to Manage Server)")
+@app_commands.describe(action="Set or clear the role", role="Role to grant Squawk command access to (required for set)")
 @rate_limited(CONFIG_COOLDOWN_SECONDS)
 @app_commands.choices(action=[
     app_commands.Choice(name="set", value="set"),
@@ -744,7 +744,7 @@ async def config_role(
         save_permissions(permissions)
         logger.info("Allowed role configured for guild %s: %s (%s)", guild_id, role.name, role.id)
         await interaction.response.send_message(
-            f"{role.mention} can now use Squawk's restricted commands (in addition to Manage Server members)."
+            f"{role.mention} can now use Squawk commands. Manage Server members can always use commands regardless."
         )
     else:
         guild_perms.pop("allowed_role_id", None)
@@ -752,13 +752,13 @@ async def config_role(
         save_permissions(permissions)
         logger.info("Allowed role cleared for guild %s", guild_id)
         await interaction.response.send_message(
-            "Allowed role cleared. Only members with Manage Server can use restricted commands now."
+            "Allowed role cleared. Only Manage Server members can use Squawk commands now."
         )
 
 
-@config_group.command(name="channel", description="Restrict which channel(s) Squawk's commands can be used in")
+@config_group.command(name="channel", description="Whitelist channels where role members can use Squawk commands (Manage Server is always unrestricted)")
 @app_commands.describe(
-    action="add/remove a channel, show the current list, or clear all restrictions",
+    action="Add/remove a channel from the whitelist, show the list, or clear it",
     channel="Channel to add/remove (required for add/remove)",
 )
 @rate_limited(CONFIG_COOLDOWN_SECONDS)
@@ -790,7 +790,7 @@ async def config_channel(
         save_permissions(permissions)
         logger.info("Command channel restriction: added #%s (%s) for guild %s", channel.name, channel.id, guild_id)
         await interaction.response.send_message(
-            f"Squawk commands can now be used in {channel.mention} (Manage Server members can still use commands anywhere)."
+            f"Added {channel.mention} to the channel whitelist. Role members can only use Squawk commands in whitelisted channels. Manage Server members are unrestricted."
         )
     elif action.value == "remove":
         if channel is None:
@@ -802,23 +802,23 @@ async def config_channel(
         permissions[guild_id] = guild_perms
         save_permissions(permissions)
         logger.info("Command channel restriction: removed #%s (%s) for guild %s", channel.name, channel.id, guild_id)
-        await interaction.response.send_message(f"Removed {channel.mention} from the allowed command channel list.")
+        await interaction.response.send_message(f"Removed {channel.mention} from the channel whitelist.")
     elif action.value == "clear":
         guild_perms["command_channels"] = []
         permissions[guild_id] = guild_perms
         save_permissions(permissions)
         logger.info("Command channel restriction cleared for guild %s", guild_id)
         await interaction.response.send_message(
-            "Command channel restriction cleared — Squawk commands can be used in any channel again."
+            "Channel whitelist cleared — role members can now use Squawk commands in any channel."
         )
     else:
         if not channels:
             await interaction.response.send_message(
-                "No channel restriction configured — Squawk commands can be used in any channel."
+                "No channel whitelist set — role members can use Squawk commands in any channel."
             )
         else:
             mentions = ", ".join(f"<#{cid}>" for cid in channels)
-            await interaction.response.send_message(f"Squawk commands are restricted to: {mentions}")
+            await interaction.response.send_message(f"Whitelisted channels (role members only): {mentions}")
 
 
 @config_group.command(name="blacklist", description="Block articles whose link contains a given text (e.g. a spammy source)")

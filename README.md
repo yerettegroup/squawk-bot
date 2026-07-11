@@ -7,7 +7,7 @@
 
 A Discord bot that posts stock and market news from Yahoo Finance to a per-server ticker watchlist.
 
-> **Don't want to self-host?** There's a free hosted instance you can invite to your server — no signup, no paywall. *(Invite link coming soon.)*
+> **Don't want to self-host?** There's a free hosted instance you can invite to your server - no signup, no paywall. *(Invite link coming soon.)*
 
 ## Self-hosting
 
@@ -52,20 +52,20 @@ Then add tickers with `/watchlist ticker action:add ticker:AAPL,MSFT,...`.
 
 | Command | Description | Cooldown |
 |---|---|---|
-| `/watchlist ticker action:<add\|remove> ticker:TICKER` | *admin* — Add/remove tickers (comma-separated, max 25). | 60s |
-| `/watchlist channel action:<set\|clear>` | *admin* — Set the channel ticker news posts to. | 15s |
+| `/watchlist ticker action:<add\|remove> ticker:TICKER` | *admin* - Add/remove tickers (comma-separated, max 25). | 60s |
+| `/watchlist channel action:<set\|clear>` | *admin* - Set the channel ticker news posts to. | 15s |
 | `/watchlist show` | List tracked tickers. | 60s |
 | `/ticker recent ticker:TICKER` | Fetch the 3 most recent articles for any ticker. | 30s |
-| `/market channel action:<set\|clear>` | *admin* — Set the channel market news posts to. | 15s |
+| `/market channel action:<set\|clear>` | *admin* - Set the channel market news posts to. | 15s |
 | `/market recent` | Fetch the 3 most recent market news articles. | 30s |
-| `/config show` | *admin* — Show this server's full configuration (ephemeral). | — |
-| `/config channel mode:<all\|none> exceptions:<#a #b …>` | *admin* — Set where regular users can use read-only commands. `all` = allowed everywhere; `none` = blocked everywhere. Exceptions flip the rule for the listed channels. Pass either param on its own, or both. | 15s |
-| `/config blacklist action:<add\|remove\|show\|clear> pattern:text` | *admin* — Skip articles whose URL contains a given substring (e.g. `trefis`). | 15s |
+| `/config show` | *admin* - Show this server's full configuration (ephemeral). | - |
+| `/config channel mode:<all\|none> exceptions:<#a #b …>` | *admin* - Set where regular users can use read-only commands. `all` = allowed everywhere; `none` = blocked everywhere. Exceptions flip the rule for the listed channels. Pass either param on its own, or both. | 15s |
+| `/config blacklist action:<add\|remove\|show\|clear> pattern:text` | *admin* - Skip articles whose URL contains a given substring (e.g. `trefis`). | 15s |
 | `/squawk` | Show bot version, uptime, tickers tracked, last poll, and any feeds in backoff. | 5s |
 
 ## How it works
 
-Every 5 minutes, Squawk fetches the Yahoo Finance RSS feed for each tracked ticker and posts any unseen articles. Market news is pulled from major index feeds (S&P 500, Dow, Nasdaq, Russell 2000). Articles are deduplicated per-server by normalized URL (tracking params stripped). When a ticker is first added, existing articles are marked seen so there's no backlog dump.
+Every 2 minutes, Squawk fetches the Yahoo Finance RSS feed for each tracked ticker and posts any unseen articles. Market news is pulled from major index feeds (S&P 500, Dow, Nasdaq, Russell 2000). Articles are deduplicated per-server by normalized URL (tracking params stripped). When a ticker is first added, existing articles are marked seen so there's no backlog dump.
 
 Feed failures back off automatically after 3 consecutive errors and alert the server owner (and `ALERT_USER_ID` if set) via DM. A watchdog force-exits the process if the poll loop hangs, letting systemd restart it.
 

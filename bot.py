@@ -38,7 +38,7 @@ HTTP_USER_AGENT = "Mozilla/5.0 (compatible; Squawk)"
 GENERAL_NEWS_URL = RSS_URL_TEMPLATE.format(ticker="%5EGSPC,%5EDJI,%5EIXIC,%5ERUT")
 GENERAL_NEWS_KEY = "__general__"
 GENERAL_NEWS_EXCLUDE_PATTERN = re.compile(r"\([A-Z]{1,5}\)|Q[1-4] 20\d\d Earnings Report")
-POLL_INTERVAL_MINUTES = 5
+POLL_INTERVAL_MINUTES = 2
 SEEN_CAP = 1000
 
 FEED_FAILURE_BACKOFF_THRESHOLD = 3
@@ -469,7 +469,7 @@ async def watchdog():
 
     if last_poll_time is None or (now - last_poll_time) > stale_after:
         logger.critical(
-            "Poll loop appears hung (last successful poll: %s) — exiting for systemd to restart",
+            "Poll loop appears hung (last successful poll: %s) - exiting for systemd to restart",
             last_poll_time,
         )
         os._exit(1)
@@ -518,7 +518,7 @@ def channel_allowed():
 async def handle_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
         await interaction.response.send_message(
-            f"Slow down — try again in {error.retry_after:.1f}s.", ephemeral=True
+            f"Slow down - try again in {error.retry_after:.1f}s.", ephemeral=True
         )
         return
     if isinstance(error, (app_commands.MissingPermissions, app_commands.CheckFailure)):
@@ -564,7 +564,7 @@ async def watchlist_ticker(interaction: discord.Interaction, action: app_command
         return
     if len(requested) > MAX_TICKERS_PER_CALL:
         await interaction.response.send_message(
-            f"Too many tickers at once — max {MAX_TICKERS_PER_CALL} per command.", ephemeral=True
+            f"Too many tickers at once - max {MAX_TICKERS_PER_CALL} per command.", ephemeral=True
         )
         return
 
@@ -584,7 +584,7 @@ async def watchlist_ticker(interaction: discord.Interaction, action: app_command
             if invalid:
                 parts.append(f"invalid: {', '.join(f'`{t}`' for t in invalid)}")
             await interaction.response.send_message(
-                "Nothing added — " + ("; ".join(parts) if parts else "no valid tickers given") + ".",
+                "Nothing added - " + ("; ".join(parts) if parts else "no valid tickers given") + ".",
                 ephemeral=True,
             )
             return
@@ -607,7 +607,7 @@ async def watchlist_ticker(interaction: discord.Interaction, action: app_command
                 parts.append(f"already tracked: {', '.join(f'`{t}`' for t in already)}")
             if invalid:
                 parts.append(f"invalid: {', '.join(f'`{t}`' for t in invalid)}")
-            await interaction.followup.send("Nothing added — " + "; ".join(parts) + ".")
+            await interaction.followup.send("Nothing added - " + "; ".join(parts) + ".")
             return
 
         guild_list.extend(to_add)
@@ -739,7 +739,7 @@ async def config_show(interaction: discord.Interaction):
 
     if exceptions:
         exc_label = "blocked in" if channel_mode == "all" else "allowed only in"
-        ch_text = f"**{channel_mode}** — {exc_label} {', '.join(f'<#{c}>' for c in exceptions)}"
+        ch_text = f"**{channel_mode}** - {exc_label} {', '.join(f'<#{c}>' for c in exceptions)}"
     else:
         ch_text = f"**{channel_mode}** (no exceptions)"
 
@@ -807,7 +807,7 @@ async def config_channel(
         guild_perms["channel_mode"] = mode.value
         logger.info("Channel mode set to %s for guild %s", mode.value, guild_id)
         reply_parts.append(
-            f"Mode: **{mode.value}** — read-only commands are "
+            f"Mode: **{mode.value}** - read-only commands are "
             f"{'allowed' if mode.value == 'all' else 'blocked'} everywhere by default."
         )
 
@@ -869,7 +869,7 @@ async def config_blacklist(
             save_blacklist(blacklist)
             logger.info("Blacklist: added %r for guild %s", cleaned, guild_id)
             await interaction.response.send_message(
-                f"Blacklisted `{cleaned}` — articles whose link contains it won't be posted."
+                f"Blacklisted `{cleaned}` - articles whose link contains it won't be posted."
             )
         else:
             if cleaned not in patterns:

@@ -32,10 +32,10 @@ You may remove the Bot from your server at any time. The operator may remove the
 
 To the maximum extent permitted by law, the operator is not liable for any losses, damages, or claims arising from your use of the Bot, including but not limited to financial losses from trades made on the basis of headlines the Bot posts. The Bot is free to use.
 
-## Changes
-
-These terms may be updated. Material changes will be reflected in the "Last updated" date at the top. Continued use of the Bot after changes constitutes acceptance.
-
 ## Contact
 
 For legal, terms, or other policy questions, email **hello@yerettegroup.com**. For bot bugs, feature requests, or anything code-related, open an issue at [github.com/yerettegroup/squawk-bot/issues](https://github.com/yerettegroup/squawk-bot/issues).
+
+## Changes
+
+These terms may be updated. Material changes will be reflected in the "Last updated" date at the top. Continued use of the Bot after changes constitutes acceptance.

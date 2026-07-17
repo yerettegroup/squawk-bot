@@ -35,12 +35,43 @@ MAX_TICKERS_PER_SERVER = int(_max_tickers_raw) if _max_tickers_raw else 0
 
 RSS_URL_TEMPLATE = "https://feeds.finance.yahoo.com/rss/2.0/headline?s={ticker}&region=US&lang=en-US"
 QUOTE_CHECK_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
-HTTP_USER_AGENT = "Mozilla/5.0 (compatible; Squawk)"
+HTTP_USER_AGENT = "Squawk/1.0"
+
+
+def _fetch_feed_body(url: str) -> bytes:
+    """Fetch raw feed bytes with a UA Cloudflare accepts, raising on non-XML responses."""
+    req = urllib.request.Request(url, headers={"User-Agent": HTTP_USER_AGENT, "Accept": "application/rss+xml, application/xml, text/xml"})
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        ctype = (resp.headers.get("Content-Type") or "").lower()
+        body = resp.read()
+    if body[:1] != b"<" or ("html" in ctype and "xml" not in ctype):
+        raise ValueError(f"non-feed response (content-type={ctype!r})")
+    return body
+
+
+def _parse_feed(url: str):
+    """Fetch via urllib with one retry (PR Newswire's Cloudflare intermittently 301s to a URL that 404s)."""
+    last_exc: Exception | None = None
+    for attempt in range(2):
+        try:
+            body = _fetch_feed_body(url)
+            return feedparser.parse(body)
+        except Exception as exc:
+            last_exc = exc
+    return feedparser.util.FeedParserDict(entries=[], bozo=1, bozo_exception=last_exc)
 GENERAL_NEWS_URL = RSS_URL_TEMPLATE.format(ticker="%5EGSPC,%5EDJI,%5EIXIC,%5ERUT")
 GENERAL_NEWS_KEY = "__general__"
 GENERAL_NEWS_EXCLUDE_PATTERN = re.compile(r"\([A-Z]{1,5}\)|Q[1-4] 20\d\d Earnings Report")
+WIRE_FIREHOSES = {
+    "GlobeNewswire": "https://www.globenewswire.com/RssFeed/orgclass/1/feedTitle/GlobeNewswire%20-%20News%20from%20Public%20Companies",
+    "PRNewswire": "https://www.prnewswire.com/rss/news-releases-list.rss",
+}
+TICKER_MENTION_RE = re.compile(
+    r"\((?:NASDAQ|NYSE|NYSEAMERICAN|AMEX|OTC|OTCMKTS|OTCQB|OTCQX|CBOE):\s*([A-Z0-9.-]+)\)",
+    re.I,
+)
 POLL_INTERVAL_MINUTES = 2
-SEEN_CAP = 1000
+SEEN_CAP = 10000
 
 FEED_FAILURE_BACKOFF_THRESHOLD = 3
 FEED_FAILURE_BACKOFF_MAX_MULTIPLIER = 6
@@ -187,6 +218,12 @@ def filter_market_entries(entries):
     return [e for e in entries if not GENERAL_NEWS_EXCLUDE_PATTERN.search(e.get("title", ""))]
 
 
+def extract_tickers(entry) -> set[str]:
+    """Pull ticker symbols from '(NASDAQ: AAPL)' style mentions in title and summary."""
+    text = (entry.get("title") or "") + " " + (entry.get("summary") or "")
+    return {m.upper() for m in TICKER_MENTION_RE.findall(text)}
+
+
 _TRACKING_PARAM_PREFIXES = ("utm_", "fbclid", "gclid")
 _TRACKING_PARAM_EXACT = {".tsrc", "tsrc", "guccounter", "soc_src", "soc_trk"}
 
@@ -210,6 +247,36 @@ def is_blacklisted(url: str, patterns: list) -> bool:
         return False
     lowered = url.lower()
     return any(p in lowered for p in patterns)
+
+
+_GNW_SEARCH_URL = "https://www.globenewswire.com/en/search/keyword/{ticker}"
+_GNW_ANCHOR_RE = re.compile(
+    r'<a\s+href="(/news-release/[^"]+)"[^>]*>\s*([^<]{5,200}?)\s*</a>',
+    re.I,
+)
+
+
+def search_globenewswire(ticker: str, limit: int = 5) -> list[tuple[str, str]]:
+    """Return up to `limit` (title, url) pairs from GlobeNewswire's per-ticker search page."""
+    url = _GNW_SEARCH_URL.format(ticker=quote(ticker, safe=".-"))
+    req = urllib.request.Request(url, headers={"User-Agent": HTTP_USER_AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            body = resp.read().decode("utf-8", errors="replace")
+    except Exception as exc:
+        logger.warning("GlobeNewswire search for %s failed: %s", ticker, exc)
+        return []
+    out: list[tuple[str, str]] = []
+    seen_slugs: set[str] = set()
+    for m in _GNW_ANCHOR_RE.finditer(body):
+        path, title = m.group(1), m.group(2).strip()
+        if path in seen_slugs:
+            continue
+        seen_slugs.add(path)
+        out.append((title, f"https://www.globenewswire.com{path}"))
+        if len(out) >= limit:
+            break
+    return out
 
 
 def format_article(entry, label: str | None = None) -> str:
@@ -280,7 +347,12 @@ def _record_feed_success(ticker: str):
 
 async def send_failure_alerts(key: str):
     """DM the owner of every affected guild, plus ALERT_USER_ID if configured, once per backoff entry."""
-    label = "market news" if key == GENERAL_NEWS_KEY else f"ticker `{key}`"
+    if key == GENERAL_NEWS_KEY:
+        label = "market news"
+    elif key in WIRE_FIREHOSES:
+        label = f"wire feed `{key}`"
+    else:
+        label = f"ticker `{key}`"
     message = (
         f"Squawk: the feed for {label} has failed {FEED_FAILURE_BACKOFF_THRESHOLD} times in a row "
         f"and is now backing off.\nLast error: {feed_last_error.get(key, 'unknown')}"
@@ -289,6 +361,9 @@ async def send_failure_alerts(key: str):
     if key == GENERAL_NEWS_KEY:
         news_config = load_news_config()
         guild_ids = [gid for gid, cfg in news_config.items() if cfg.get("enabled") and cfg.get("channel_id")]
+    elif key in WIRE_FIREHOSES:
+        watchlist = load_watchlist()
+        guild_ids = [gid for gid, tickers in watchlist.items() if tickers]
     else:
         watchlist = load_watchlist()
         guild_ids = [gid for gid, tickers in watchlist.items() if key in tickers]
@@ -321,7 +396,7 @@ async def _fetch_feed(cache: dict, key: str, url: str):
         return
 
     try:
-        feed = await asyncio.to_thread(feedparser.parse, url)
+        feed = await asyncio.to_thread(_parse_feed,url)
     except Exception as exc:
         if _record_feed_failure(key, str(exc)):
             await send_failure_alerts(key)
@@ -379,8 +454,22 @@ async def poll_feeds():
     for ticker in all_tickers:
         await _fetch_feed(feeds_cache, ticker, RSS_URL_TEMPLATE.format(ticker=ticker))
 
+    if all_tickers:
+        for name, url in WIRE_FIREHOSES.items():
+            await _fetch_feed(feeds_cache, name, url)
+
     if any(g.get("enabled") and g.get("channel_id") for g in news_config.values()):
         await _fetch_feed(feeds_cache, GENERAL_NEWS_KEY, GENERAL_NEWS_URL)
+
+    wire_entries: list[tuple[object, set[str]]] = []
+    for name in WIRE_FIREHOSES:
+        feed = feeds_cache.get(name)
+        if feed is None:
+            continue
+        for entry in feed.entries:
+            tickers_in_entry = extract_tickers(entry)
+            if tickers_in_entry:
+                wire_entries.append((entry, tickers_in_entry))
 
     new_by_guild: dict[str, list] = {}
 
@@ -414,6 +503,27 @@ async def poll_feeds():
                     logger.info("Posted article for %s in guild %s: %s", ticker, guild_id, entry.get("title", "Untitled"))
                 except discord.DiscordException as exc:
                     logger.error("Failed to post article for %s in guild %s: %s", ticker, guild_id, exc)
+
+        watchset = set(tickers)
+        for entry, entry_tickers in wire_entries:
+            matched = watchset & entry_tickers
+            if not matched:
+                continue
+            article_url = entry.get("link", "")
+            if not article_url or is_blacklisted(article_url, guild_blacklist):
+                continue
+            key = dedup_key(article_url)
+            if key in guild_seen_set:
+                continue
+            label = ", ".join(sorted(matched))
+            try:
+                await channel.send(format_article(entry, label))
+                logger.info("Posted wire article for %s in guild %s: %s", label, guild_id, entry.get("title", "Untitled"))
+            except discord.DiscordException as exc:
+                logger.error("Failed to post wire article for guild %s: %s", guild_id, exc)
+                continue
+            guild_seen_set.add(key)
+            new_urls.append(key)
 
         if new_urls:
             new_by_guild.setdefault(guild_id, []).extend(new_urls)
@@ -620,7 +730,7 @@ async def watchlist_ticker(interaction: discord.Interaction, action: app_command
         seeded_keys: dict[str, list] = {guild_id: []}
         for t in to_add:
             try:
-                feed = await asyncio.to_thread(feedparser.parse, RSS_URL_TEMPLATE.format(ticker=t))
+                feed = await asyncio.to_thread(_parse_feed,RSS_URL_TEMPLATE.format(ticker=t))
                 seeded_keys[guild_id].extend(dedup_key(e["link"]) for e in feed.entries if e.get("link"))
             except Exception as exc:
                 logger.error("Failed to seed seen articles for %s in guild %s: %s", t, guild_id, exc)
@@ -921,29 +1031,44 @@ async def ticker_recent(interaction: discord.Interaction, ticker: str):
         return
     await interaction.response.defer()
 
-    url = RSS_URL_TEMPLATE.format(ticker=ticker)
-    try:
-        feed = await asyncio.to_thread(feedparser.parse, url)
-    except Exception as exc:
-        logger.error("Failed to fetch RSS for %s: %s", ticker, exc)
-        await interaction.followup.send(f"Failed to fetch news for `{ticker}`.")
-        return
-
-    if getattr(feed, "bozo", False) and not getattr(feed, "entries", None):
-        logger.error("Malformed RSS feed for %s: %s", ticker, getattr(feed, "bozo_exception", "unknown error"))
-        await interaction.followup.send(f"No articles found for `{ticker}`.")
-        return
-
     guild_blacklist = load_blacklist().get(str(interaction.guild_id), [])
-    entries = [e for e in feed.entries if not is_blacklisted(e.get("link", ""), guild_blacklist)][:RECENT_ARTICLE_COUNT]
-    if not entries:
+
+    collected: list[tuple[str, str]] = []
+    seen_keys: set[str] = set()
+
+    yahoo_url = RSS_URL_TEMPLATE.format(ticker=ticker)
+    try:
+        feed = await asyncio.to_thread(_parse_feed,yahoo_url)
+    except Exception as exc:
+        logger.warning("Yahoo RSS for %s failed: %s", ticker, exc)
+        feed = None
+    if feed is not None:
+        for e in feed.entries:
+            link = e.get("link", "")
+            title = e.get("title", "").strip()
+            if not link or not title or is_blacklisted(link, guild_blacklist):
+                continue
+            key = dedup_key(link)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+            collected.append((title, link))
+
+    for title, link in await asyncio.to_thread(search_globenewswire, ticker, 5):
+        if is_blacklisted(link, guild_blacklist):
+            continue
+        key = dedup_key(link)
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        collected.append((title, link))
+
+    if not collected:
         await interaction.followup.send(f"No recent articles found for `{ticker}`.")
         return
 
     lines = [f"**Recent news for `{ticker}`**"]
-    for entry in entries:
-        title = entry.get("title", "Untitled")
-        link = entry.get("link", "")
+    for title, link in collected[:RECENT_ARTICLE_COUNT]:
         lines.append(f"[{title}](<{link}>)")
 
     await interaction.followup.send("\n".join(lines))
@@ -988,7 +1113,7 @@ async def news_channel(
 
         seeded_count = 0
         try:
-            feed = await asyncio.to_thread(feedparser.parse, GENERAL_NEWS_URL)
+            feed = await asyncio.to_thread(_parse_feed,GENERAL_NEWS_URL)
             existing_keys = [dedup_key(entry["link"]) for entry in feed.entries if entry.get("link")]
             if existing_keys:
                 seeded_count = await merge_seen({guild_id: existing_keys})
@@ -1017,7 +1142,7 @@ async def news_recent(interaction: discord.Interaction):
     await interaction.response.defer()
 
     try:
-        feed = await asyncio.to_thread(feedparser.parse, GENERAL_NEWS_URL)
+        feed = await asyncio.to_thread(_parse_feed,GENERAL_NEWS_URL)
     except Exception as exc:
         logger.error("Failed to fetch market news feed: %s", exc)
         await interaction.followup.send("Failed to fetch market news.")
@@ -1075,6 +1200,7 @@ async def squawk_status(interaction: discord.Interaction):
     ]
 
     failing = [t for t in tickers if t in feed_backoff_until]
+    failing.extend(name for name in WIRE_FIREHOSES if name in feed_backoff_until)
     if GENERAL_NEWS_KEY in feed_backoff_until:
         failing.append("market news")
     if failing:

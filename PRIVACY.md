@@ -11,7 +11,7 @@ The Bot stores only the minimum data needed to function. Everything is scoped to
 - **Server ID** - the numeric Discord identifier of servers the Bot is a member of.
 - **Channel IDs** - the channels an admin has designated to receive news posts and, optionally, the channels where non-admin users may run read-only commands.
 - **Ticker symbols** - the list of stock ticker symbols each server has added to its watchlist.
-- **Seen article URLs** - a rolling list (capped at 1000 per server) of URLs the Bot has already posted, used to avoid duplicates.
+- **Seen article URLs** - a rolling list (capped at 10,000 per server) of URLs the Bot has already posted, used to avoid duplicates.
 - **URL blacklist patterns** - any URL substrings an admin has configured to filter out spammy sources.
 
 ## What we do NOT store

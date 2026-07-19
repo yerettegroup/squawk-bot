@@ -64,7 +64,6 @@ GENERAL_NEWS_KEY = "__general__"
 GENERAL_NEWS_EXCLUDE_PATTERN = re.compile(r"\([A-Z]{1,5}\)|Q[1-4] 20\d\d Earnings Report")
 WIRE_FIREHOSES = {
     "GlobeNewswire": "https://www.globenewswire.com/RssFeed/orgclass/1/feedTitle/GlobeNewswire%20-%20News%20from%20Public%20Companies",
-    "PRNewswire": "https://www.prnewswire.com/rss/news-releases-list.rss",
 }
 TICKER_MENTION_RE = re.compile(
     r"\((?:NASDAQ|NYSE|NYSEAMERICAN|AMEX|OTC|OTCMKTS|OTCQB|OTCQX|CBOE):\s*([A-Z0-9.-]+)\)",

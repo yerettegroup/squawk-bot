@@ -1,6 +1,6 @@
 <div align="center">
 
-# Squawk ✦
+# Squawk
 
 **A Discord bot that posts stock and market news from Yahoo Finance and GlobalNewswire to a per-server ticker watchlist.**
 
@@ -10,8 +10,6 @@
 ![discord.py](https://img.shields.io/badge/discord.py-2.4%2B-5865F2)
 
 </div>
-
-See [PRIVACY.md](PRIVACY.md) and [TERMS.md](TERMS.md) for the hosted instance's policies.
 
 ## Self-hosting
 
@@ -121,7 +119,5 @@ journalctl -u squawk -f
 Squawk is licensed under the [MIT License](./LICENSE).
 
 <div align="center">
-
-![yerette](mage.svg)
 
 </div>

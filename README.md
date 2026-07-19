@@ -5,9 +5,7 @@
 
 # Squawk
 
-A Discord bot that posts stock and market news from Yahoo Finance to a per-server ticker watchlist.
-
-> **Don't want to self-host?** There's a free hosted instance you can [invite to your server](https://discord.com/oauth2/authorize?client_id=1524897979880968444).
+A Discord bot that posts stock and market news from Yahoo Finance and GlobalNewswire to a per-server ticker watchlist.
 
 See [PRIVACY.md](PRIVACY.md) and [TERMS.md](TERMS.md) for the hosted instance's policies.
 
@@ -20,7 +18,7 @@ See [PRIVACY.md](PRIVACY.md) and [TERMS.md](TERMS.md) for the hosted instance's 
 ### Installation
 
 ```bash
-git clone https://github.com/yerettegroup/squawk-bot.git
+git clone https://github.com/psalm2517/squawk-bot.git
 cd squawk-bot
 pip install -r requirements.txt
 cp .env.example .env
@@ -117,7 +115,3 @@ journalctl -u squawk -f
 ## License
 
 Squawk is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). Commercial use without copyleft restrictions requires a separate commercial license.
-
-Contact: [hello@yerettegroup.com](mailto:hello@yerettegroup.com)
-
-![yerette](mage.svg)
